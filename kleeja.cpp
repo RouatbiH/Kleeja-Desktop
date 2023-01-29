@@ -9,13 +9,45 @@ size_t write_data(void* ptr, size_t size, size_t nmemb, std::string* data) {
     return size * nmemb;
 }
 
+std::string decodeHTML(std::string input) {
+    std::string output = "";
+    std::string buffer = "";
+    bool inEntity = false;
+    for (int i = 0; i < input.length(); i++) {
+        if (input[i] == '&') {
+            inEntity = true;
+        } else if (input[i] == ';') {
+            inEntity = false;
+            if (buffer == "lt") {
+                output += "<";
+            } else if (buffer == "gt") {
+                output += ">";
+            } else if (buffer == "amp") {
+                output += "&";
+            } else if (buffer == "quot") {
+                output += "\"";
+            } else if (buffer == "apos") {
+                output += "'";
+            } else {
+                output += "&" + buffer + ";";
+            }
+            buffer = "";
+        } else if (inEntity) {
+            buffer += input[i];
+        } else {
+            output += input[i];
+        }
+    }
+    return output;
+}
+
 void parseJSON(std::string jsonString) {
     Json::Value root;
     Json::Reader reader;
     bool parsingSuccessful = reader.parse(jsonString, root);
     if (!parsingSuccessful) {
         std::cout << "Error parsing JSON" << std::endl;
-        return;
+        exit(1);
     }
 
     std::regex textareaRegex("<textarea.*?id=\\\"(.*?)\\\".*?>(.*?)</textarea>");
@@ -36,9 +68,9 @@ void parseJSON(std::string jsonString) {
                             labelText = labelMatch[2];
                         }
                         if (labelText.empty()) {
-							std::cout << id << ": " << text << std::endl;
+							std::cout << id << ": " << decodeHTML(text) << std::endl;
                         } else {
-                            std::cout << labelText << ": " << text << std::endl;
+                            std::cout << labelText << ": " << decodeHTML(text) << std::endl;
                         }
                     }
                 }

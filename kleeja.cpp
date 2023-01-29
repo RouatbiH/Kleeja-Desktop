@@ -53,7 +53,7 @@ void parseJSON(std::string jsonString) {
 
 int main(int argc, char* argv[]) {
 
-	const char* URL = "https://top4top.io/";
+	const char* URL = "https://up.zalghaym.com/";
 	
     // Check if any files were selected
     if (argc < 2) {

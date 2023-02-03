@@ -61,17 +61,15 @@ void parseJSON(std::string jsonString) {
                 if (match.size() >= 3) {
                     std::string id = match[1];
                     std::string text = match[2];
-                    if(id == "file1" || id == "delCode" || id == "image1") {
-                        std::string labelText;
-                        std::string labelSearch = i.substr(0, match.position());
-                        if (std::regex_search(labelSearch, labelMatch, labelRegex)) {
-                            labelText = labelMatch[2];
-                        }
-                        if (labelText.empty()) {
-							std::cout << id << ": " << decodeHTML(text) << std::endl;
-                        } else {
-                            std::cout << labelText << ": " << decodeHTML(text) << std::endl;
-                        }
+                    std::string labelText;
+                    std::string labelSearch = i.substr(0, match.position());
+                    if (std::regex_search(labelSearch, labelMatch, labelRegex)) {
+                        labelText = labelMatch[2];
+                    }
+                    if (labelText.empty()) {
+                        std::cout << id << ": " << decodeHTML(text) << std::endl;
+                    } else {
+                        std::cout << labelText << ": " << decodeHTML(text) << std::endl;
                     }
                 }
                 i = match.suffix().str();
@@ -85,15 +83,15 @@ void parseJSON(std::string jsonString) {
 
 int main(int argc, char* argv[]) {
 
-	const char* URL = "https://up.zalghaym.com/";
-	
+    const char* URL = "https://up.zalghaym.com/";
+
     // Check if any files were selected
     if (argc < 2) {
         std::cout << "Error: No files selected." << std::endl;
         return 1;
     }
 
-    // Initialize cURL
+    // Initialize cURL session
     CURL* curl = curl_easy_init();
     if (!curl) {
         std::cout << "Error: Failed to initialize cURL." << std::endl;
@@ -105,39 +103,36 @@ int main(int argc, char* argv[]) {
 
     // Set POST method
     curl_easy_setopt(curl, CURLOPT_POST, 1);
-	
-	// Set User-Agent
-	curl_easy_setopt(curl, CURLOPT_USERAGENT, "Kleeja Desktop/1.0");
+
+    // Set User-Agent
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "Kleeja Desktop/1.0");
 
     // Create list of files and postfields
-    struct curl_httppost* formpost = NULL;
-    struct curl_httppost* lastptr = NULL;
+    struct curl_mime *mime = curl_mime_init(curl);
     for (int i = 1; i < argc; i++) {
         std::string postfieldName = "file_" + std::to_string(i) + "_";
-        curl_formadd(&formpost, &lastptr,
-            CURLFORM_COPYNAME, postfieldName.c_str(),
-            CURLFORM_FILE, argv[i],
-            CURLFORM_END);
+        curl_mimepart *part = curl_mime_addpart(mime);
+        curl_mime_name(part, postfieldName.c_str());
+        curl_mime_filedata(part, argv[i]);
     }
-        curl_formadd(&formpost, &lastptr,
-        CURLFORM_COPYNAME, "ajax",
-        CURLFORM_COPYCONTENTS, "1",
-        CURLFORM_END);
-    curl_formadd(&formpost, &lastptr,
-        CURLFORM_COPYNAME, "submitr",
-        CURLFORM_COPYCONTENTS, "submit",
-        CURLFORM_END);
-    curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+    curl_mimepart *part = curl_mime_addpart(mime);
+    curl_mime_name(part, "ajax");
+    curl_mime_data(part, "1", CURL_ZERO_TERMINATED);
+    part = curl_mime_addpart(mime);
+    curl_mime_name(part, "submitr");
+    curl_mime_data(part, "submit", CURL_ZERO_TERMINATED);
+    curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
 
     std::string response;
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
     // Perform the request
     CURLcode res = curl_easy_perform(curl);
 
     // Cleanup
+    curl_mime_free(mime);
     curl_easy_cleanup(curl);
-    curl_formfree(formpost);
 
     // Check for errors
     if (res != CURLE_OK) {
@@ -151,4 +146,4 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-//g++ -std=c++11 test5.cpp -o test5 -ljsoncpp -lcurl
+//g++ -std=c++11 kleeja.cpp -o kleeja -ljsoncpp -lcurl

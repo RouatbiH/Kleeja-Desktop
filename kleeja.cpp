@@ -4,8 +4,8 @@
 #include <jsoncpp/json/json.h>
 #include <regex>
 
-size_t write_data(void* ptr, size_t size, size_t nmemb, std::string* data) {
-    data->append((char*) ptr, size * nmemb);
+size_t write_data(void * ptr, size_t size, size_t nmemb, std::string * data) {
+    data -> append((char * ) ptr, size * nmemb);
     return size * nmemb;
 }
 
@@ -54,7 +54,7 @@ void parseJSON(std::string jsonString) {
     std::regex labelRegex("<label.*?for=\\\"(.*?)\\\".*?>(.*?)</label>");
     std::smatch match;
     std::smatch labelMatch;
-    for (auto& object : root) {
+    for (auto & object: root) {
         if (object["t"].asString() == "index_info") {
             std::string i = object["i"].asString();
             while (std::regex_search(i, match, textareaRegex)) {
@@ -81,9 +81,9 @@ void parseJSON(std::string jsonString) {
     }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char * argv[]) {
 
-    const char* URL = "https://up.zalghaym.com/";
+    const char * URL = "https://up.zalghaym.com/";
 
     // Check if any files were selected
     if (argc < 2) {
@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Initialize cURL session
-    CURL* curl = curl_easy_init();
+    CURL * curl = curl_easy_init();
     if (!curl) {
         std::cout << "Error: Failed to initialize cURL." << std::endl;
         return 1;
@@ -108,14 +108,14 @@ int main(int argc, char* argv[]) {
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "Kleeja Desktop/1.0");
 
     // Create list of files and postfields
-    struct curl_mime *mime = curl_mime_init(curl);
+    struct curl_mime * mime = curl_mime_init(curl);
     for (int i = 1; i < argc; i++) {
         std::string postfieldName = "file_" + std::to_string(i) + "_";
-        curl_mimepart *part = curl_mime_addpart(mime);
+        curl_mimepart * part = curl_mime_addpart(mime);
         curl_mime_name(part, postfieldName.c_str());
         curl_mime_filedata(part, argv[i]);
     }
-    curl_mimepart *part = curl_mime_addpart(mime);
+    curl_mimepart * part = curl_mime_addpart(mime);
     curl_mime_name(part, "ajax");
     curl_mime_data(part, "1", CURL_ZERO_TERMINATED);
     part = curl_mime_addpart(mime);
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
 
     std::string response;
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, & response);
 
     // Perform the request
     CURLcode res = curl_easy_perform(curl);
@@ -139,10 +139,11 @@ int main(int argc, char* argv[]) {
         std::cout << "Error: " << curl_easy_strerror(res) << std::endl;
         return 1;
     }
-    
-	parseJSON(response);
-	
-	std::cout << "File(s) uploaded successfully." << std::endl;
+
+    parseJSON(response);
+
+    std::cout << "File(s) uploaded successfully." << std::endl;
+    std::cin.get();
     return 0;
 }
 
